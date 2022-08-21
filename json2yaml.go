@@ -82,8 +82,21 @@ func Convert(w io.Writer, r io.Reader) error {
 }
 
 func writeValue(w io.Writer, v any) {
-	bs, _ := json.Marshal(v)
-	w.Write(bs)
+	switch v := v.(type) {
+	case nil:
+		w.Write([]byte("null"))
+	case bool:
+		if v {
+			w.Write([]byte("true"))
+		} else {
+			w.Write([]byte("false"))
+		}
+	case json.Number:
+		w.Write([]byte(v))
+	case string:
+		bs, _ := json.Marshal(v)
+		w.Write(bs)
+	}
 }
 
 func writeIndent(w io.Writer, count int) {
