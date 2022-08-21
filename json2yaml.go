@@ -64,6 +64,13 @@ func Convert(w io.Writer, r io.Reader) error {
 				w.Write([]byte(" "))
 				writeValue(w, token)
 				w.Write([]byte("\n"))
+			case '[':
+				stack[len(stack)-1] = '-'
+				fallthrough
+			case '-':
+				w.Write([]byte("- "))
+				writeValue(w, token)
+				w.Write([]byte("\n"))
 			}
 		}
 		if dec.More() {

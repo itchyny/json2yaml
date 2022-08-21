@@ -60,6 +60,16 @@ func TestConvert(t *testing.T) {
 `,
 		},
 		{
+			name: "simple array",
+			src:  `[null,false,true,-128,"foo bar baz"]`,
+			want: `- null
+- false
+- true
+- -128
+- "foo bar baz"
+`,
+		},
+		{
 			name: "unclosed array",
 			src:  "[",
 			err:  "unexpected EOF",
