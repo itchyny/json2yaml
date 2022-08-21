@@ -25,50 +25,35 @@ func Convert(w io.Writer, r io.Reader) error {
 		}
 		if delim, ok := token.(json.Delim); ok {
 			switch delim {
-			case '{':
-				stack = append(stack, '{')
-				indent += 2
-				continue
-			case '}':
-				if stack[len(stack)-1] == '{' {
-					if stack[len(stack)-2] == ':' {
-						w.Write([]byte(" "))
-					}
-					w.Write([]byte("{}\n"))
-				}
-				stack = stack[:len(stack)-1]
-				indent -= 2
-			case '[':
-				stack = append(stack, '[')
+			case '{', '[':
+				stack = append(stack, byte(delim))
 				indent += 2
 				if dec.More() {
-					if stack[len(stack)-2] != '[' {
-						if stack[len(stack)-2] == ':' {
-							w.Write([]byte{'\n'})
-						}
+					if stack[len(stack)-2] == ':' {
+						w.Write([]byte{'\n'})
 						writeIndent(w, indent)
 					}
-					w.Write([]byte("- "))
+					if stack[len(stack)-1] == '[' {
+						w.Write([]byte("- "))
+					}
 				} else {
 					if stack[len(stack)-2] == ':' {
 						w.Write([]byte(" "))
 					}
-					w.Write([]byte("[]\n"))
+					if stack[len(stack)-1] == '{' {
+						w.Write([]byte("{}\n"))
+					} else {
+						w.Write([]byte("[]\n"))
+					}
 				}
 				continue
-			case ']':
+			case '}', ']':
 				stack = stack[:len(stack)-1]
 				indent -= 2
 			}
 		} else {
 			switch stack[len(stack)-1] {
 			case '{':
-				if stack[len(stack)-2] == ':' {
-					w.Write([]byte("\n"))
-					writeIndent(w, indent)
-				}
-				fallthrough
-			case ',':
 				writeValue(w, token)
 				w.Write([]byte(":"))
 				stack[len(stack)-1] = ':'
@@ -83,11 +68,10 @@ func Convert(w io.Writer, r io.Reader) error {
 			}
 		}
 		if dec.More() {
+			writeIndent(w, indent)
 			if stack[len(stack)-1] == ':' {
-				writeIndent(w, indent)
-				stack[len(stack)-1] = ','
+				stack[len(stack)-1] = '{'
 			} else {
-				writeIndent(w, indent)
 				w.Write([]byte("- "))
 			}
 		}
