@@ -69,10 +69,13 @@ func Convert(w io.Writer, r io.Reader) error {
 		}
 		if dec.More() {
 			writeIndent(w, indent)
-			if stack[len(stack)-1] == ':' {
+			switch stack[len(stack)-1] {
+			case ':':
 				stack[len(stack)-1] = '{'
-			} else {
+			case '[':
 				w.Write([]byte("- "))
+			case '.':
+				w.Write([]byte("---\n"))
 			}
 		}
 	}

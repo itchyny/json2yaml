@@ -22,15 +22,38 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			name: "boolean",
-			src:  "[false,true]",
-			want: `- false
-- true
+			src:  "false true",
+			want: `false
+---
+true
 `,
 		},
 		{
 			name: "number",
-			src:  "128",
-			want: `128
+			src:  "0 128 -320 3.14 -6.63e-34",
+			want: `0
+---
+128
+---
+-320
+---
+3.14
+---
+-6.63e-34
+`,
+		},
+		{
+			name: "string",
+			src:  `"" "foo" "128" "hello, world" "\b\f\n\r\n\t"`,
+			want: `""
+---
+"foo"
+---
+"128"
+---
+"hello, world"
+---
+"\u0008\u000c\n\r\n\t"
 `,
 		},
 		{
@@ -65,6 +88,16 @@ func TestConvert(t *testing.T) {
     "bar": {}
   "baz": {}
 "baz": {}
+`,
+		},
+		{
+			name: "multiple objects",
+			src:  `{}{"foo":128}{}`,
+			want: `{}
+---
+"foo": 128
+---
+{}
 `,
 		},
 		{
@@ -119,6 +152,16 @@ func TestConvert(t *testing.T) {
   - - - - {}
 "bar":
   - {}
+`,
+		},
+		{
+			name: "multiple arrays",
+			src:  `[][{"foo":128}][]`,
+			want: `[]
+---
+- "foo": 128
+---
+[]
 `,
 		},
 		{
