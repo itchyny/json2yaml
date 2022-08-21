@@ -14,7 +14,11 @@ func Convert(w io.Writer, r io.Reader) error {
 		token, err := dec.Token()
 		if err != nil {
 			if err == io.EOF {
-				err = nil
+				if stack[len(stack)-1] == '.' {
+					err = nil
+				} else {
+					err = io.ErrUnexpectedEOF
+				}
 			}
 			return err
 		}

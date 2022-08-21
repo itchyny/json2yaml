@@ -21,10 +21,20 @@ func TestConvert(t *testing.T) {
 `,
 		},
 		{
+			name: "unclosed object",
+			src:  "{",
+			err:  "unexpected EOF",
+		},
+		{
 			name: "empty array",
 			src:  "[]",
 			want: `[]
 `,
+		},
+		{
+			name: "unclosed array",
+			src:  "[",
+			err:  "unexpected EOF",
 		},
 	}
 	for _, tc := range testCases {
