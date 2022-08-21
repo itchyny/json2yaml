@@ -122,6 +122,31 @@ func TestConvert(t *testing.T) {
 `,
 		},
 		{
+			name: "deeply nested object",
+			src:  `{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{}}}}}}}}}}}}}}}}}}}}}`,
+			want: `"x":
+  "x":
+    "x":
+      "x":
+        "x":
+          "x":
+            "x":
+              "x":
+                "x":
+                  "x":
+                    "x":
+                      "x":
+                        "x":
+                          "x":
+                            "x":
+                              "x":
+                                "x":
+                                  "x":
+                                    "x":
+                                      "x": {}
+`,
+		},
+		{
 			name: "unclosed array",
 			src:  "[",
 			err:  "unexpected EOF",
