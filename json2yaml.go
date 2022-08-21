@@ -40,12 +40,25 @@ func Convert(w io.Writer, r io.Reader) error {
 				indent -= 2
 			case '[':
 				stack = append(stack, '[')
-				continue
-			case ']':
-				if stack[len(stack)-1] == '[' {
+				indent += 2
+				if dec.More() {
+					if stack[len(stack)-2] != '[' {
+						if stack[len(stack)-2] == ':' {
+							w.Write([]byte{'\n'})
+						}
+						writeIndent(w, indent)
+					}
+					w.Write([]byte("- "))
+				} else {
+					if stack[len(stack)-2] == ':' {
+						w.Write([]byte(" "))
+					}
 					w.Write([]byte("[]\n"))
 				}
+				continue
+			case ']':
 				stack = stack[:len(stack)-1]
+				indent -= 2
 			}
 		} else {
 			switch stack[len(stack)-1] {
@@ -65,10 +78,6 @@ func Convert(w io.Writer, r io.Reader) error {
 				writeValue(w, token)
 				w.Write([]byte("\n"))
 			case '[':
-				stack[len(stack)-1] = '-'
-				fallthrough
-			case '-':
-				w.Write([]byte("- "))
 				writeValue(w, token)
 				w.Write([]byte("\n"))
 			}
@@ -77,6 +86,9 @@ func Convert(w io.Writer, r io.Reader) error {
 			if stack[len(stack)-1] == ':' {
 				writeIndent(w, indent)
 				stack[len(stack)-1] = ','
+			} else {
+				writeIndent(w, indent)
+				w.Write([]byte("- "))
 			}
 		}
 	}

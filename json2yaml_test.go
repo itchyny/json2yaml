@@ -70,6 +70,38 @@ func TestConvert(t *testing.T) {
 `,
 		},
 		{
+			name: "nested array",
+			src:  "[0,[1],[2,3],[4,[5,[6,[],7],[]],[8]],[],9]",
+			want: `- 0
+- - 1
+- - 2
+  - 3
+- - 4
+  - - 5
+    - - 6
+      - []
+      - 7
+    - []
+  - - 8
+- []
+- 9
+`,
+		},
+		{
+			name: "nested object and array",
+			src:  `{"foo":[0,{"bar":[],"foo":{}},[{"foo":[{"foo":[]}]}],[[[{}]]]],"bar":[{}]}`,
+			want: `"foo":
+  - 0
+  - "bar": []
+    "foo": {}
+  - - "foo":
+        - "foo": []
+  - - - - {}
+"bar":
+  - {}
+`,
+		},
+		{
 			name: "unclosed array",
 			src:  "[",
 			err:  "unexpected EOF",
