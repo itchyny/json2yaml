@@ -17,12 +17,14 @@ func TestConvert(t *testing.T) {
 		{
 			name: "empty object",
 			src:  "{}",
-			want: "{}",
+			want: `{}
+`,
 		},
 		{
 			name: "empty array",
 			src:  "[]",
-			want: "[]",
+			want: `[]
+`,
 		},
 	}
 	for _, tc := range testCases {
