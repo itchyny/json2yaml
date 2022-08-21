@@ -61,9 +61,8 @@ func Convert(w io.Writer, r io.Reader) error {
 				continue
 			case ':':
 				w.Write([]byte(" "))
-				writeValue(w, token)
-				w.Write([]byte("\n"))
-			case '[':
+				fallthrough
+			default:
 				writeValue(w, token)
 				w.Write([]byte("\n"))
 			}

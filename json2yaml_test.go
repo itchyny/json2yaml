@@ -15,6 +15,25 @@ func TestConvert(t *testing.T) {
 		err  string
 	}{
 		{
+			name: "null",
+			src:  "null",
+			want: `null
+`,
+		},
+		{
+			name: "boolean",
+			src:  "[false,true]",
+			want: `- false
+- true
+`,
+		},
+		{
+			name: "number",
+			src:  "128",
+			want: `128
+`,
+		},
+		{
 			name: "empty object",
 			src:  "{}",
 			want: `{}
