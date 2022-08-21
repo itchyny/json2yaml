@@ -29,6 +29,26 @@ func TestConvert(t *testing.T) {
 `,
 		},
 		{
+			name: "nested object",
+			src: `{
+				"foo": {"bar": {"baz": 128, "bar": null}, "baz": 0},
+				"bar": {"foo": {}, "bar": {"bar": {}}, "baz": {}},
+				"baz": {}
+			}`,
+			want: `"foo":
+  "bar":
+    "baz": 128
+    "bar": null
+  "baz": 0
+"bar":
+  "foo": {}
+  "bar":
+    "bar": {}
+  "baz": {}
+"baz": {}
+`,
+		},
+		{
 			name: "unclosed object",
 			src:  "{",
 			err:  "unexpected EOF",
