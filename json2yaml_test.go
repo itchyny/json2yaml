@@ -61,11 +61,12 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			name: "simple array",
-			src:  `[null,false,true,-128,"foo bar baz"]`,
+			src:  `[null,false,true,-128,12345678901234567890,"foo bar baz"]`,
 			want: `- null
 - false
 - true
 - -128
+- 12345678901234567890
 - "foo bar baz"
 `,
 		},

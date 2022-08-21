@@ -9,6 +9,7 @@ import (
 // Convert reads JSON from r and writes YAML to w.
 func Convert(w io.Writer, r io.Reader) error {
 	dec := json.NewDecoder(r)
+	dec.UseNumber()
 	stack := []byte{'.'}
 	indent := -2
 	for {
@@ -30,7 +31,7 @@ func Convert(w io.Writer, r io.Reader) error {
 				indent += 2
 				if dec.More() {
 					if stack[len(stack)-2] == ':' {
-						w.Write([]byte{'\n'})
+						w.Write([]byte("\n"))
 						writeIndent(w, indent)
 					}
 					if stack[len(stack)-1] == '[' {
