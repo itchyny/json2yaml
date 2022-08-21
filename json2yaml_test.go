@@ -21,6 +21,14 @@ func TestConvert(t *testing.T) {
 `,
 		},
 		{
+			name: "simple object",
+			src:  `{"foo": 128, "bar": null, "baz": false}`,
+			want: `"foo": 128
+"bar": null
+"baz": false
+`,
+		},
+		{
 			name: "unclosed object",
 			src:  "{",
 			err:  "unexpected EOF",

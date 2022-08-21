@@ -39,6 +39,23 @@ func Convert(w io.Writer, r io.Reader) error {
 				}
 				stack = stack[:len(stack)-1]
 			}
+		} else {
+			switch stack[len(stack)-1] {
+			case '{', ',':
+				writeValue(w, token)
+				w.Write([]byte(":"))
+				stack[len(stack)-1] = ':'
+			case ':':
+				w.Write([]byte(" "))
+				writeValue(w, token)
+				w.Write([]byte("\n"))
+				stack[len(stack)-1] = ','
+			}
 		}
 	}
+}
+
+func writeValue(w io.Writer, v any) {
+	bs, _ := json.Marshal(v)
+	w.Write(bs)
 }
