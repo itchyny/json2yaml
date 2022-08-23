@@ -203,8 +203,8 @@ true
 				if err != nil {
 					t.Fatalf("should not raise an error but got: %s", err)
 				}
-				if got := sb.String(); got != tc.want {
-					t.Fatalf("should write\n  %q\nbut got\n  %q\nwhen source is\n  %q", tc.want, got, tc.src)
+				if got, want := diff(sb.String(), tc.want); got != want {
+					t.Fatalf("should write\n  %q\nbut got\n  %q\nwhen source is\n  %q", want, got, tc.src)
 				}
 			} else {
 				if err == nil {
@@ -216,4 +216,27 @@ true
 			}
 		})
 	}
+}
+
+func diff(xs, ys string) (string, string) {
+	if xs == ys {
+		return "", ""
+	}
+	for {
+		i := strings.IndexByte(xs, '\n')
+		j := strings.IndexByte(ys, '\n')
+		if i < 0 || j < 0 || xs[:i] != ys[:j] {
+			break
+		}
+		xs, ys = xs[i+1:], ys[j+1:]
+	}
+	for {
+		i := strings.LastIndexByte(xs, '\n')
+		j := strings.LastIndexByte(ys, '\n')
+		if i < 0 || j < 0 || xs[i:] != ys[j:] {
+			break
+		}
+		xs, ys = xs[:i], ys[:j]
+	}
+	return xs, ys
 }
