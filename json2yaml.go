@@ -120,8 +120,8 @@ var quoteStringPattern = regexp.MustCompile(
 		// tag:yaml.org,2002:bool
 		`|true|false|y(?:es)?|no?|on|off` +
 		// tag:yaml.org,2002:int, tag:yaml.org,2002:float
-		`|[-+]?(?:0(?:b[01_]+|o?[0-7_]+|x[0-9a-f_]+)` + // base 2, 8, 16
-		`|(?:(?:0|[1-9][0-9_]*)(?::[0-5]?[0-9])*(?:\.[0-9_]*)?` +
+		`|[-+]?(?:0(?:b[01_]+|o[0-7_]+|x[0-9a-f_]+)` + // base 2, 8, 16
+		`|(?:[0-9][0-9_]*(?::[0-5]?[0-9])*(?:\.[0-9_]*)?` +
 		`|\.[0-9_]+)(?:E[-+]?[0-9]+)?` + // base 10, 60
 		`|\.inf)|\.nan` + // infinities, not-a-number
 		// tag:yaml.org,2002:timestamp
