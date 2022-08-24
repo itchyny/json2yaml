@@ -4,6 +4,7 @@ package json2yaml
 import (
 	"encoding/json"
 	"io"
+	"regexp"
 )
 
 // Convert reads JSON from r and writes YAML to w.
@@ -81,6 +82,38 @@ func Convert(w io.Writer, r io.Reader) error {
 	}
 }
 
+// This pattern matches more than the specifications,
+// but it is okay to quote for parsers just in case.
+var quoteStringPattern = regexp.MustCompile(
+	`^(?:` +
+		`(?i:` +
+		// tag:yaml.org,2002:null
+		`|~|null` +
+		// tag:yaml.org,2002:bool
+		`|true|false|y(?:es)?|no?|on|off` +
+		// tag:yaml.org,2002:int, tag:yaml.org,2002:float
+		`|[-+]?(?:0(?:b[01_]+|o?[0-7_]+|x[0-9a-f_]+)` + // base 2, 8, 16
+		`|(?:(?:0|[1-9][0-9_]*)(?::[0-5]?[0-9])*(?:\.[0-9_]*)?` +
+		`|\.[0-9_]+)(?:E[-+]?[0-9]+)?` + // base 10, 60
+		`|\.inf)|\.nan` + // infinities, not-a-number
+		// tag:yaml.org,2002:timestamp
+		`|\d\d\d\d-\d\d?-\d\d?` + // date
+		`(?:(?:T|\s+)\d\d?:\d\d?:\d\d?(?:\.\d*)?` + // time
+		`(?:\s*(?:Z|[-+]\d\d?(?::\d\d?)?))?)?` + // time zone
+		`)$` +
+		// c-indicator - '-' - '?' - ':', leading white space
+		"|[,\\[\\]{}#&*!|>'\"%@` \\t]" +
+		// sequence entry, document separator, mapping key
+		`|(?:-(?:--)?|\?)(?:\s|$)` +
+		`)` +
+		// mapping value, comment, trailing white space
+		`|:(?:\s|$)|\s(?:#|$)` +
+		// C0 control codes, DEL
+		"|[\u0000-\u001F\u007F]" +
+		// BOM, noncharacters
+		"|[\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
+)
+
 func writeValue(w io.Writer, v any) {
 	switch v := v.(type) {
 	case nil:
@@ -94,8 +127,12 @@ func writeValue(w io.Writer, v any) {
 	case json.Number:
 		w.Write([]byte(v))
 	case string:
-		bs, _ := json.Marshal(v)
-		w.Write(bs)
+		if quoteStringPattern.MatchString(v) {
+			bs, _ := json.Marshal(v)
+			w.Write(bs)
+		} else {
+			w.Write([]byte(v))
+		}
 	}
 }
 
