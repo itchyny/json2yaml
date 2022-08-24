@@ -12,12 +12,12 @@ func Convert(w io.Writer, r io.Reader) error {
 	dec := json.NewDecoder(r)
 	dec.UseNumber()
 	stack := []byte{'.'}
-	indent := -2
+	indent := 0
 	for {
 		token, err := dec.Token()
 		if err != nil {
 			if err == io.EOF {
-				if stack[len(stack)-1] == '.' {
+				if len(stack) == 1 {
 					err = nil
 				} else {
 					err = io.ErrUnexpectedEOF
@@ -28,8 +28,10 @@ func Convert(w io.Writer, r io.Reader) error {
 		if delim, ok := token.(json.Delim); ok {
 			switch delim {
 			case '{', '[':
+				if len(stack) > 1 {
+					indent += 2
+				}
 				stack = append(stack, byte(delim))
-				indent += 2
 				if dec.More() {
 					if stack[len(stack)-2] == ':' {
 						if _, err := w.Write([]byte("\n")); err != nil {
