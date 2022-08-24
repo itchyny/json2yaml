@@ -32,20 +32,32 @@ func Convert(w io.Writer, r io.Reader) error {
 				indent += 2
 				if dec.More() {
 					if stack[len(stack)-2] == ':' {
-						w.Write([]byte("\n"))
-						writeIndent(w, indent)
+						if _, err := w.Write([]byte("\n")); err != nil {
+							return err
+						}
+						if err := writeIndent(w, indent); err != nil {
+							return err
+						}
 					}
 					if stack[len(stack)-1] == '[' {
-						w.Write([]byte("- "))
+						if _, err := w.Write([]byte("- ")); err != nil {
+							return err
+						}
 					}
 				} else {
 					if stack[len(stack)-2] == ':' {
-						w.Write([]byte(" "))
+						if _, err := w.Write([]byte(" ")); err != nil {
+							return err
+						}
 					}
 					if stack[len(stack)-1] == '{' {
-						w.Write([]byte("{}\n"))
+						if _, err := w.Write([]byte("{}\n")); err != nil {
+							return err
+						}
 					} else {
-						w.Write([]byte("[]\n"))
+						if _, err := w.Write([]byte("[]\n")); err != nil {
+							return err
+						}
 					}
 				}
 				continue
@@ -56,27 +68,43 @@ func Convert(w io.Writer, r io.Reader) error {
 		} else {
 			switch stack[len(stack)-1] {
 			case '{':
-				writeValue(w, token)
-				w.Write([]byte(":"))
+				if err := writeValue(w, token); err != nil {
+					return err
+				}
+				if _, err := w.Write([]byte(":")); err != nil {
+					return err
+				}
 				stack[len(stack)-1] = ':'
 				continue
 			case ':':
-				w.Write([]byte(" "))
+				if _, err := w.Write([]byte(" ")); err != nil {
+					return err
+				}
 				fallthrough
 			default:
-				writeValue(w, token)
-				w.Write([]byte("\n"))
+				if err := writeValue(w, token); err != nil {
+					return err
+				}
+				if _, err := w.Write([]byte("\n")); err != nil {
+					return err
+				}
 			}
 		}
 		if dec.More() {
-			writeIndent(w, indent)
+			if err := writeIndent(w, indent); err != nil {
+				return err
+			}
 			switch stack[len(stack)-1] {
 			case ':':
 				stack[len(stack)-1] = '{'
 			case '[':
-				w.Write([]byte("- "))
+				if _, err := w.Write([]byte("- ")); err != nil {
+					return err
+				}
 			case '.':
-				w.Write([]byte("---\n"))
+				if _, err := w.Write([]byte("---\n")); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -114,35 +142,53 @@ var quoteStringPattern = regexp.MustCompile(
 		"|[\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
 )
 
-func writeValue(w io.Writer, v any) {
+func writeValue(w io.Writer, v any) error {
 	switch v := v.(type) {
 	case nil:
-		w.Write([]byte("null"))
+		if _, err := w.Write([]byte("null")); err != nil {
+			return err
+		}
 	case bool:
 		if v {
-			w.Write([]byte("true"))
+			if _, err := w.Write([]byte("true")); err != nil {
+				return err
+			}
 		} else {
-			w.Write([]byte("false"))
+			if _, err := w.Write([]byte("false")); err != nil {
+				return err
+			}
 		}
 	case json.Number:
-		w.Write([]byte(v))
+		if _, err := w.Write([]byte(v)); err != nil {
+			return err
+		}
 	case string:
 		if quoteStringPattern.MatchString(v) {
 			bs, _ := json.Marshal(v)
-			w.Write(bs)
+			if _, err := w.Write(bs); err != nil {
+				return err
+			}
 		} else {
-			w.Write([]byte(v))
+			if _, err := w.Write([]byte(v)); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
-func writeIndent(w io.Writer, count int) {
+func writeIndent(w io.Writer, count int) error {
 	if n := count; n > 0 {
 		const spaces = "                                "
 		for n > len(spaces) {
-			w.Write([]byte(spaces))
+			if _, err := w.Write([]byte(spaces)); err != nil {
+				return err
+			}
 			n -= len(spaces)
 		}
-		w.Write([]byte(spaces)[:n])
+		if _, err := w.Write([]byte(spaces)[:n]); err != nil {
+			return err
+		}
 	}
+	return nil
 }
