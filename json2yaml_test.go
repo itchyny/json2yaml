@@ -92,8 +92,10 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			name: "quote special characters",
-			src:  "\"\x7F\" \"\uFDCF\" \"\uFDD0\" \"\uFDEF\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\"",
-			want: join([]string{`"\x7F"`, "\uFDCF", "\"\uFDD0\"", "\"\uFDEF\"", "\uFEFE", "\"\uFEFF\"", "\uFFFD", "\"\uFFFE\"", "\"\uFFFF\""}),
+			src: "\"\u007F\" \"\u0080\" \"\u0089\" \"\u009F\" \"\u00A0\" \"\u00A7\" \"\u00FF\"" +
+				"\"\uFDCF\" \"\uFDD0\" \"\uFDEF\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\"",
+			want: join([]string{`"\x7F"`, `"\x80"`, `"\x89"`, `"\x9F"`, "\u00A0", "\u00A7", "\u00FF",
+				"\uFDCF", "\"\uFDD0\"", "\"\uFDEF\"", "\uFEFE", "\"\uFEFF\"", "\uFFFD", "\"\uFFFE\"", "\"\uFFFF\""}),
 		},
 		{
 			name: "empty object",

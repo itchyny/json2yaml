@@ -150,8 +150,8 @@ var quoteStringPattern = regexp.MustCompile(
 		`|:(?:[ \t]|$)|[ \t](?:#|\n|$)` +
 		// C0 control codes - '\n', DEL
 		"|[\u0000-\u0009\u000B-\u001F\u007F]" +
-		// BOM, noncharacters
-		"|[\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
+		// C1 control codes, BOM, noncharacters
+		"|[\u0080-\u009F\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
 )
 
 func (c *converter) writeValue(v any) error {
@@ -250,6 +250,7 @@ func (c *converter) writeIndent() error {
 
 // ref: encodeState#string in encoding/json
 func (c *converter) writeDoubleQuotedString(s string) error {
+	const hex = "0123456789ABCDEF"
 	if _, err := c.w.Write([]byte(`"`)); err != nil {
 		return err
 	}
@@ -282,7 +283,6 @@ func (c *converter) writeDoubleQuotedString(s string) error {
 			case '\t':
 				_, err = c.w.Write([]byte(`\t`))
 			default:
-				const hex = "0123456789ABCDEF"
 				_, err = c.w.Write([]byte{'\\', 'x', hex[b>>4], hex[b&0xF]})
 			}
 			if err != nil {
@@ -292,7 +292,20 @@ func (c *converter) writeDoubleQuotedString(s string) error {
 			start = i
 			continue
 		}
-		_, size := utf8.DecodeRuneInString(s[i:])
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r <= '\u009F' {
+			if start < i {
+				if _, err = c.w.Write([]byte(s[start:i])); err != nil {
+					return err
+				}
+			}
+			if _, err = c.w.Write([]byte{'\\', 'x', hex[r>>4], hex[r&0xF]}); err != nil {
+				return err
+			}
+			i += size
+			start = i
+			continue
+		}
 		i += size
 	}
 	if start < len(s) {
