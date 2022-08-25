@@ -295,14 +295,22 @@ func (c *converter) writeDoubleQuotedString(s string) error {
 			continue
 		}
 		r, size := utf8.DecodeRuneInString(s[i:])
-		if r <= '\u009F' {
+		if r <= '\u009F' || '\uFDD0' <= r && (r == '\uFEFF' ||
+			r <= '\uFDEF' || r == '\uFFFE' || r == '\uFFFF') {
 			if start < i {
 				if _, err = c.w.Write([]byte(s[start:i])); err != nil {
 					return err
 				}
 			}
-			if _, err = c.w.Write([]byte{'\\', 'x', hex[r>>4], hex[r&0xF]}); err != nil {
-				return err
+			if r <= '\u009F' {
+				if _, err = c.w.Write([]byte{'\\', 'x', hex[r>>4], hex[r&0xF]}); err != nil {
+					return err
+				}
+			} else {
+				if _, err = c.w.Write([]byte{'\\', 'u', hex[r>>12], hex[r>>8&0xF],
+					hex[r>>4&0xF], hex[r&0xF]}); err != nil {
+					return err
+				}
 			}
 			i += size
 			start = i
