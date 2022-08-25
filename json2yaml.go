@@ -9,15 +9,23 @@ import (
 
 // Convert reads JSON from r and writes YAML to w.
 func Convert(w io.Writer, r io.Reader) error {
+	return (&converter{w, []byte{'.'}, 0}).convert(r)
+}
+
+type converter struct {
+	w      io.Writer
+	stack  []byte
+	indent int
+}
+
+func (c *converter) convert(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	dec.UseNumber()
-	stack := []byte{'.'}
-	indent := 0
 	for {
 		token, err := dec.Token()
 		if err != nil {
 			if err == io.EOF {
-				if len(stack) == 1 {
+				if len(c.stack) == 1 {
 					err = nil
 				} else {
 					err = io.ErrUnexpectedEOF
@@ -28,83 +36,83 @@ func Convert(w io.Writer, r io.Reader) error {
 		if delim, ok := token.(json.Delim); ok {
 			switch delim {
 			case '{', '[':
-				if len(stack) > 1 {
-					indent += 2
+				if len(c.stack) > 1 {
+					c.indent += 2
 				}
-				stack = append(stack, byte(delim))
+				c.stack = append(c.stack, byte(delim))
 				if dec.More() {
-					if stack[len(stack)-2] == ':' {
-						if _, err := w.Write([]byte("\n")); err != nil {
+					if c.stack[len(c.stack)-2] == ':' {
+						if _, err := c.w.Write([]byte("\n")); err != nil {
 							return err
 						}
-						if err := writeIndent(w, indent); err != nil {
+						if err := c.writeIndent(); err != nil {
 							return err
 						}
 					}
-					if stack[len(stack)-1] == '[' {
-						if _, err := w.Write([]byte("- ")); err != nil {
+					if c.stack[len(c.stack)-1] == '[' {
+						if _, err := c.w.Write([]byte("- ")); err != nil {
 							return err
 						}
 					}
 				} else {
-					if stack[len(stack)-2] == ':' {
-						if _, err := w.Write([]byte(" ")); err != nil {
+					if c.stack[len(c.stack)-2] == ':' {
+						if _, err := c.w.Write([]byte(" ")); err != nil {
 							return err
 						}
 					}
-					if stack[len(stack)-1] == '{' {
-						if _, err := w.Write([]byte("{}\n")); err != nil {
+					if c.stack[len(c.stack)-1] == '{' {
+						if _, err := c.w.Write([]byte("{}\n")); err != nil {
 							return err
 						}
 					} else {
-						if _, err := w.Write([]byte("[]\n")); err != nil {
+						if _, err := c.w.Write([]byte("[]\n")); err != nil {
 							return err
 						}
 					}
 				}
 				continue
 			case '}', ']':
-				stack = stack[:len(stack)-1]
-				indent -= 2
+				c.stack = c.stack[:len(c.stack)-1]
+				c.indent -= 2
 			}
 		} else {
-			switch stack[len(stack)-1] {
+			switch c.stack[len(c.stack)-1] {
 			case '{':
-				if err := writeValue(w, token); err != nil {
+				if err := c.writeValue(token); err != nil {
 					return err
 				}
-				if _, err := w.Write([]byte(":")); err != nil {
+				if _, err := c.w.Write([]byte(":")); err != nil {
 					return err
 				}
-				stack[len(stack)-1] = ':'
+				c.stack[len(c.stack)-1] = ':'
 				continue
 			case ':':
-				if _, err := w.Write([]byte(" ")); err != nil {
+				if _, err := c.w.Write([]byte(" ")); err != nil {
 					return err
 				}
 				fallthrough
 			default:
-				if err := writeValue(w, token); err != nil {
+				if err := c.writeValue(token); err != nil {
 					return err
 				}
-				if _, err := w.Write([]byte("\n")); err != nil {
+				if _, err := c.w.Write([]byte("\n")); err != nil {
 					return err
 				}
 			}
 		}
 		if dec.More() {
-			if err := writeIndent(w, indent); err != nil {
+			if err := c.writeIndent(); err != nil {
 				return err
 			}
-			switch stack[len(stack)-1] {
+			switch c.stack[len(c.stack)-1] {
 			case ':':
-				stack[len(stack)-1] = '{'
+				c.stack[len(c.stack)-1] = '{'
 			case '[':
-				if _, err := w.Write([]byte("- ")); err != nil {
+				if _, err := c.w.Write([]byte("- ")); err != nil {
 					return err
 				}
 			case '.':
-				if _, err := w.Write([]byte("---\n")); err != nil {
+				if _, err := c.w.Write([]byte("---\n")); err != nil {
 					return err
 				}
 			}
@@ -144,34 +152,34 @@ var quoteStringPattern = regexp.MustCompile(
 		"|[\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
 )
 
-func writeValue(w io.Writer, v any) error {
+func (c *converter) writeValue(v any) error {
 	switch v := v.(type) {
 	case nil:
-		if _, err := w.Write([]byte("null")); err != nil {
+		if _, err := c.w.Write([]byte("null")); err != nil {
 			return err
 		}
 	case bool:
 		if v {
-			if _, err := w.Write([]byte("true")); err != nil {
+			if _, err := c.w.Write([]byte("true")); err != nil {
 				return err
 			}
 		} else {
-			if _, err := w.Write([]byte("false")); err != nil {
+			if _, err := c.w.Write([]byte("false")); err != nil {
 				return err
 			}
 		}
 	case json.Number:
-		if _, err := w.Write([]byte(v)); err != nil {
+		if _, err := c.w.Write([]byte(v)); err != nil {
 			return err
 		}
 	case string:
 		if quoteStringPattern.MatchString(v) {
 			bs, _ := json.Marshal(v)
-			if _, err := w.Write(bs); err != nil {
+			if _, err := c.w.Write(bs); err != nil {
 				return err
 			}
 		} else {
-			if _, err := w.Write([]byte(v)); err != nil {
+			if _, err := c.w.Write([]byte(v)); err != nil {
 				return err
 			}
 		}
@@ -179,16 +187,16 @@ func writeValue(w io.Writer, v any) error {
 	return nil
 }
 
-func writeIndent(w io.Writer, count int) error {
-	if n := count; n > 0 {
+func (c *converter) writeIndent() error {
+	if n := c.indent; n > 0 {
 		const spaces = "                                "
 		for n > len(spaces) {
-			if _, err := w.Write([]byte(spaces)); err != nil {
+			if _, err := c.w.Write([]byte(spaces)); err != nil {
 				return err
 			}
 			n -= len(spaces)
 		}
-		if _, err := w.Write([]byte(spaces)[:n]); err != nil {
+		if _, err := c.w.Write([]byte(spaces)[:n]); err != nil {
 			return err
 		}
 	}
