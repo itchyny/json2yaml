@@ -1,6 +1,8 @@
 package json2yaml_test
 
 import (
+	"fmt"
+	"log"
 	"strings"
 	"testing"
 
@@ -319,4 +321,15 @@ func diff(xs, ys string) (string, string) {
 		xs, ys = xs[:i], ys[:j]
 	}
 	return xs, ys
+}
+
+func ExampleConvert() {
+	input := strings.NewReader(`{"Hello": "world!"}`)
+	var output strings.Builder
+	if err := json2yaml.Convert(&output, input); err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Print(output.String())
+	// Output:
+	// Hello: world!
 }
