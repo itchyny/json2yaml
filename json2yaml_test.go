@@ -236,7 +236,7 @@ bar:
 		},
 		{
 			name: "block style string in object and array",
-			src:  `{"x": "a\nb\n", "y": ["\na","\na\n"], "z": {"a\nb": {"a\nb\n": ["a\nb"]}}}`,
+			src:  `{"x": "a\nb\n", "y": ["\na","\na\n"], "z": {"a\nb": {"a\nb\n": ["a\nb"]}}}{"w":"a\nb"}`,
 			want: `x: |
   a
   b
@@ -259,6 +259,10 @@ z:
       - |-
         a
         b
+---
+w: |-
+  a
+  b
 `,
 		},
 	}

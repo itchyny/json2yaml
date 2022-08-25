@@ -75,7 +75,9 @@ func (c *converter) convert(r io.Reader) error {
 				continue
 			case '}', ']':
 				c.stack = c.stack[:len(c.stack)-1]
-				c.indent -= 2
+				if len(c.stack) > 1 {
+					c.indent -= 2
+				}
 			}
 		} else {
 			switch c.stack[len(c.stack)-1] {
