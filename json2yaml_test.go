@@ -34,7 +34,7 @@ func TestConvert(t *testing.T) {
 		{
 			name: "string",
 			src:  `"" "foo" "null" "hello, world" "\b\f\n\r\n\t" "１２３４５"`,
-			want: join([]string{`""`, `foo`, `"null"`, `hello, world`, `"\u0008\u000c\n\r\n\t"`, `１２３４５`}),
+			want: join([]string{`""`, `foo`, `"null"`, `hello, world`, `"\b\f\n\r\n\t"`, `１２３４５`}),
 		},
 		{
 			name: "quote booleans",
@@ -78,10 +78,10 @@ func TestConvert(t *testing.T) {
 				"%TAG" "!!str" "!<>" "&anchor" "*anchor" "https://example.com/?q=text#fragment"
 				"- ." ". -" "-." ".-" "? ." ". ?" "?." ".?" ": ." ". :" "?:" ":?" ". ? :." "[]" "{}"
 				". #" "# ." ".#." ". #." ".# ." ". # ." ". ! \" $ % & ' ( ) * + , - / ; < = > ? [ \\ ] ^ _ { | } ~"`,
-			want: join([]string{`"!"`, `"\""`, `"#"`, `$`, `"%"`, `"\u0026"`, `"'"`, `(`, `)`, `"*"`, `+`, `","`,
+			want: join([]string{`"!"`, `"\""`, `"#"`, `$`, `"%"`, `"&"`, `"'"`, `(`, `)`, `"*"`, `+`, `","`,
 				`"-"`, `--`, `"---"`, `----`, `"--- -"`, `"- ---"`, `"- --- -"`, `-- --`, `?-`, `-?`, `?---`, `---?`, `"--- ?"`,
-				`.`, `/`, `":"`, `;`, `<`, `=`, `"\u003e"`, `"?"`, `"["`, `\`, `"]"`, `^`, `_`, `"{"`, `"|"`, `"}"`, `"~"`,
-				`"%TAG"`, `"!!str"`, `"!\u003c\u003e"`, `"\u0026anchor"`, `"*anchor"`, `https://example.com/?q=text#fragment`,
+				`.`, `/`, `":"`, `;`, `<`, `=`, `">"`, `"?"`, `"["`, `\`, `"]"`, `^`, `_`, `"{"`, `"|"`, `"}"`, `"~"`,
+				`"%TAG"`, `"!!str"`, `"!<>"`, `"&anchor"`, `"*anchor"`, `https://example.com/?q=text#fragment`,
 				`"- ."`, `. -`, `-.`, `.-`, `"? ."`, `. ?`, `?.`, `.?`, `": ."`, `". :"`, `"?:"`, `:?`, `. ? :.`, `"[]"`, `"{}"`,
 				`". #"`, `"# ."`, `.#.`, `". #."`, `.# .`, `". # ."`, `. ! " $ % & ' ( ) * + , - / ; < = > ? [ \ ] ^ _ { | } ~`}),
 		},
@@ -93,7 +93,7 @@ func TestConvert(t *testing.T) {
 		{
 			name: "quote special characters",
 			src:  "\"\x7F\" \"\uFDCF\" \"\uFDD0\" \"\uFDEF\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\"",
-			want: join([]string{"\"\x7F\"", "\uFDCF", "\"\uFDD0\"", "\"\uFDEF\"", "\uFEFE", "\"\uFEFF\"", "\uFFFD", "\"\uFFFE\"", "\"\uFFFF\""}),
+			want: join([]string{`"\x7F"`, "\uFDCF", "\"\uFDD0\"", "\"\uFDEF\"", "\uFEFE", "\"\uFEFF\"", "\uFFFD", "\"\uFFFE\"", "\"\uFFFF\""}),
 		},
 		{
 			name: "empty object",

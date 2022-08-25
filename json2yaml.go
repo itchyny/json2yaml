@@ -6,6 +6,7 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 // Convert reads JSON from r and writes YAML to w.
@@ -180,9 +181,7 @@ func (c *converter) writeString(v string) error {
 		_, err := c.w.Write([]byte(v))
 		return err
 	case quoteStringPattern.MatchString(v):
-		bs, _ := json.Marshal(v)
-		_, err := c.w.Write(bs)
-		return err
+		return c.writeDoubleQuotedString(v)
 	case strings.ContainsRune(v, '\n'):
 		return c.writeBlockStyleString(v)
 	}
@@ -247,4 +246,60 @@ func (c *converter) writeIndent() error {
 		}
 	}
 	return nil
+}
+
+// ref: encodeState#string in encoding/json
+func (c *converter) writeDoubleQuotedString(s string) error {
+	if _, err := c.w.Write([]byte(`"`)); err != nil {
+		return err
+	}
+	start := 0
+	for i := 0; i < len(s); {
+		var err error
+		if b := s[i]; b < utf8.RuneSelf {
+			if ' ' <= b && b <= '~' && b != '"' && b != '\\' {
+				i++
+				continue
+			}
+			if start < i {
+				if _, err = c.w.Write([]byte(s[start:i])); err != nil {
+					return err
+				}
+			}
+			switch b {
+			case '"':
+				_, err = c.w.Write([]byte(`\"`))
+			case '\\':
+				_, err = c.w.Write([]byte(`\\`))
+			case '\b':
+				_, err = c.w.Write([]byte(`\b`))
+			case '\f':
+				_, err = c.w.Write([]byte(`\f`))
+			case '\n':
+				_, err = c.w.Write([]byte(`\n`))
+			case '\r':
+				_, err = c.w.Write([]byte(`\r`))
+			case '\t':
+				_, err = c.w.Write([]byte(`\t`))
+			default:
+				const hex = "0123456789ABCDEF"
+				_, err = c.w.Write([]byte{'\\', 'x', hex[b>>4], hex[b&0xF]})
+			}
+			if err != nil {
+				return err
+			}
+			i++
+			start = i
+			continue
+		}
+		_, size := utf8.DecodeRuneInString(s[i:])
+		i += size
+	}
+	if start < len(s) {
+		if _, err := c.w.Write([]byte(s[start:])); err != nil {
+			return err
+		}
+	}
+	_, err := c.w.Write([]byte(`"`))
+	return err
 }
