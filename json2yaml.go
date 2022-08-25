@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"strings"
 )
 
 // Convert reads JSON from r and writes YAML to w.
@@ -141,47 +142,92 @@ var quoteStringPattern = regexp.MustCompile(
 		`)$` +
 		// c-indicator - '-' - '?' - ':', leading white space
 		"|[,\\[\\]{}#&*!|>'\"%@` \\t]" +
-		// sequence entry, document separator, mapping key
-		`|(?:-(?:--)?|\?)(?:\s|$)` +
+		// sequence entry, document separator, mapping key, newlines
+		`|(?:-(?:--)?|\?|\n+)(?:[ \t]|$)` +
 		`)` +
 		// mapping value, comment, trailing white space
-		`|:(?:\s|$)|\s(?:#|$)` +
-		// C0 control codes, DEL
-		"|[\u0000-\u001F\u007F]" +
+		`|:(?:[ \t]|$)|[ \t](?:#|\n|$)` +
+		// C0 control codes - '\n', DEL
+		"|[\u0000-\u0009\u000B-\u001F\u007F]" +
 		// BOM, noncharacters
 		"|[\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
 )
 
 func (c *converter) writeValue(v any) error {
 	switch v := v.(type) {
-	case nil:
-		if _, err := c.w.Write([]byte("null")); err != nil {
-			return err
-		}
+	default:
+		_, err := c.w.Write([]byte("null"))
+		return err
 	case bool:
 		if v {
-			if _, err := c.w.Write([]byte("true")); err != nil {
-				return err
-			}
+			_, err := c.w.Write([]byte("true"))
+			return err
 		} else {
-			if _, err := c.w.Write([]byte("false")); err != nil {
-				return err
-			}
-		}
-	case json.Number:
-		if _, err := c.w.Write([]byte(v)); err != nil {
+			_, err := c.w.Write([]byte("false"))
 			return err
 		}
+	case json.Number:
+		_, err := c.w.Write([]byte(v))
+		return err
 	case string:
-		if quoteStringPattern.MatchString(v) {
-			bs, _ := json.Marshal(v)
-			if _, err := c.w.Write(bs); err != nil {
+		return c.writeString(v)
+	}
+}
+
+func (c *converter) writeString(v string) error {
+	switch {
+	default:
+		_, err := c.w.Write([]byte(v))
+		return err
+	case quoteStringPattern.MatchString(v):
+		bs, _ := json.Marshal(v)
+		_, err := c.w.Write(bs)
+		return err
+	case strings.ContainsRune(v, '\n'):
+		return c.writeBlockStyleString(v)
+	}
+}
+
+func (c *converter) writeBlockStyleString(v string) error {
+	if c.stack[len(c.stack)-1] == '{' {
+		if _, err := c.w.Write([]byte("? ")); err != nil {
+			return err
+		}
+	}
+	if _, err := c.w.Write([]byte("|")); err != nil {
+		return err
+	}
+	if !strings.HasSuffix(v, "\n") {
+		if _, err := c.w.Write([]byte("-")); err != nil {
+			return err
+		}
+	} else if strings.HasSuffix(v, "\n\n") {
+		if _, err := c.w.Write([]byte("+")); err != nil {
+			return err
+		}
+	}
+	c.indent += 2
+	for s := ""; v != ""; {
+		s, v, _ = strings.Cut(v, "\n")
+		if _, err := c.w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		if s != "" {
+			if err := c.writeIndent(); err != nil {
 				return err
 			}
-		} else {
-			if _, err := c.w.Write([]byte(v)); err != nil {
+			if _, err := c.w.Write([]byte(s)); err != nil {
 				return err
 			}
+		}
+	}
+	c.indent -= 2
+	if c.stack[len(c.stack)-1] == '{' {
+		if _, err := c.w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		if err := c.writeIndent(); err != nil {
+			return err
 		}
 	}
 	return nil

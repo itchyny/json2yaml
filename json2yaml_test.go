@@ -90,8 +90,8 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			name: "quote special characters",
-			src:  "\"\\n\" \"\x7F\" \"\uFDCF\" \"\uFDD0\" \"\uFDEF\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\"",
-			want: join([]string{"\"\\n\"", "\"\x7F\"", "\uFDCF", "\"\uFDD0\"", "\"\uFDEF\"", "\uFEFE", "\"\uFEFF\"", "\uFFFD", "\"\uFFFE\"", "\"\uFFFF\""}),
+			src:  "\"\x7F\" \"\uFDCF\" \"\uFDD0\" \"\uFDEF\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\"",
+			want: join([]string{"\"\x7F\"", "\uFDCF", "\"\uFDD0\"", "\"\uFDEF\"", "\uFEFE", "\"\uFEFF\"", "\uFFFD", "\"\uFFFE\"", "\"\uFFFF\""}),
 		},
 		{
 			name: "empty object",
@@ -220,6 +220,42 @@ bar:
 			name: "unclosed array",
 			src:  "[",
 			err:  "unexpected EOF",
+		},
+		{
+			name: "block style string",
+			src: `"\n" "\n\n" "a\n" "a\n\n" "a\n\n\n" "a \n" "a\t\n" "a\r\n"
+				"a\nb" "a\r\nb" "a\n\nb" "a\nb\n" "a\n  b\nc" "a\n  b\nc\n"
+				"\na" "\n a" "\n\na" "\na\n" "\na\nb\n" "\na\nb\n\n"`,
+			want: join([]string{`"\n"`, `"\n\n"`, "|\n  a", "|+\n  a\n", "|+\n  a\n\n", `"a \n"`, `"a\t\n"`, `"a\r\n"`,
+				"|-\n  a\n  b", `"a\r\nb"`, "|-\n  a\n\n  b", "|\n  a\n  b", "|-\n  a\n    b\n  c", "|\n  a\n    b\n  c",
+				"|-\n\n  a", `"\n a"`, "|-\n\n\n  a", "|\n\n  a", "|\n\n  a\n  b", "|+\n\n  a\n  b\n"}),
+		},
+		{
+			name: "block style string in object and array",
+			src:  `{"x": "a\nb\n", "y": ["\na","\na\n"], "z": {"a\nb": {"a\nb\n": ["a\nb"]}}}`,
+			want: `x: |
+  a
+  b
+"y":
+  - |-
+
+    a
+  - |
+
+    a
+z:
+  ? |-
+    a
+    b
+  :
+    ? |
+      a
+      b
+    :
+      - |-
+        a
+        b
+`,
 		},
 	}
 	for _, tc := range testCases {
