@@ -124,38 +124,6 @@ func (c *converter) convert(r io.Reader) error {
 	}
 }
 
-// This pattern matches more than the specifications,
-// but it is okay to quote for parsers just in case.
-var quoteStringPattern = regexp.MustCompile(
-	`^(?:` +
-		`(?i:` +
-		// tag:yaml.org,2002:null
-		`|~|null` +
-		// tag:yaml.org,2002:bool
-		`|true|false|y(?:es)?|no?|on|off` +
-		// tag:yaml.org,2002:int, tag:yaml.org,2002:float
-		`|[-+]?(?:0(?:b[01_]+|o[0-7_]+|x[0-9a-f_]+)` + // base 2, 8, 16
-		`|(?:[0-9][0-9_]*(?::[0-5]?[0-9])*(?:\.[0-9_]*)?` +
-		`|\.[0-9_]+)(?:E[-+]?[0-9]+)?` + // base 10, 60
-		`|\.inf)|\.nan` + // infinities, not-a-number
-		// tag:yaml.org,2002:timestamp
-		`|\d\d\d\d-\d\d?-\d\d?` + // date
-		`(?:(?:T|\s+)\d\d?:\d\d?:\d\d?(?:\.\d*)?` + // time
-		`(?:\s*(?:Z|[-+]\d\d?(?::\d\d?)?))?)?` + // time zone
-		`)$` +
-		// c-indicator - '-' - '?' - ':', leading white space
-		"|[,\\[\\]{}#&*!|>'\"%@` \\t]" +
-		// sequence entry, document separator, mapping key, newlines
-		`|(?:-(?:--)?|\?|\n+)(?:[ \t]|$)` +
-		`)` +
-		// mapping value, comment, trailing white space
-		`|:(?:[ \t]|$)|[ \t](?:#|\n|$)` +
-		// C0 control codes - '\n', DEL
-		"|[\u0000-\u0009\u000B-\u001F\u007F]" +
-		// C1 control codes, BOM, noncharacters
-		"|[\u0080-\u009F\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
-)
-
 func (c *converter) writeValue(v any) error {
 	switch v := v.(type) {
 	default:
@@ -177,15 +145,63 @@ func (c *converter) writeValue(v any) error {
 	}
 }
 
+// These patterns match more than the specifications,
+// but it is okay to quote for parsers just in case.
+var (
+	quoteSingleLineStringPattern = regexp.MustCompile(
+		`^(?:` +
+			`(?i:` +
+			// tag:yaml.org,2002:null
+			`|~|null` +
+			// tag:yaml.org,2002:bool
+			`|true|false|y(?:es)?|no?|on|off` +
+			// tag:yaml.org,2002:int, tag:yaml.org,2002:float
+			`|[-+]?(?:0(?:b[01_]+|o[0-7_]+|x[0-9a-f_]+)` + // base 2, 8, 16
+			`|(?:[0-9][0-9_]*(?::[0-5]?[0-9])*(?:\.[0-9_]*)?` +
+			`|\.[0-9_]+)(?:E[-+]?[0-9]+)?` + // base 10, 60
+			`|\.inf)|\.nan` + // infinities, not-a-number
+			// tag:yaml.org,2002:timestamp
+			`|\d\d\d\d-\d\d?-\d\d?` + // date
+			`(?:(?:T|\s+)\d\d?:\d\d?:\d\d?(?:\.\d*)?` + // time
+			`(?:\s*(?:Z|[-+]\d\d?(?::\d\d?)?))?)?` + // time zone
+			`)$` +
+			// c-indicator - '-' - '?' - ':', leading white space
+			"|[,\\[\\]{}#&*!|>'\"%@` \\t]" +
+			// sequence entry, document separator, mapping key
+			`|(?:-(?:--)?|\?)(?:[ \t]|$)` +
+			`)` +
+			// mapping value
+			`|:(?:[ \t]|$)` +
+			// trailing white space, comment
+			`|[ \t](?:#|$)` +
+			// C0 control codes - '\n', DEL
+			"|[\u0000-\u0009\u000B-\u001F\u007F" +
+			// C1 control codes, BOM, noncharacters
+			"\u0080-\u009F\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
+	)
+	quoteMultiLineStringPattern = regexp.MustCompile(
+		`` +
+			// leading white space
+			`^\n*(?: |$)` +
+			// C0 control codes - '\t' - '\n', DEL
+			"|[\u0000-\u0008\u000B-\u001F\u007F" +
+			// C1 control codes, BOM, noncharacters
+			"\u0080-\u009F\uFEFF\uFDD0-\uFDEF\uFFFE\uFFFF]",
+	)
+)
+
 func (c *converter) writeString(v string) error {
 	switch {
 	default:
 		_, err := c.w.Write([]byte(v))
 		return err
-	case quoteStringPattern.MatchString(v):
-		return c.writeDoubleQuotedString(v)
 	case strings.ContainsRune(v, '\n'):
-		return c.writeBlockStyleString(v)
+		if !quoteMultiLineStringPattern.MatchString(v) {
+			return c.writeBlockStyleString(v)
+		}
+		fallthrough
+	case quoteSingleLineStringPattern.MatchString(v):
+		return c.writeDoubleQuotedString(v)
 	}
 }
 
