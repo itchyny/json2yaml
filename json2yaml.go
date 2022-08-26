@@ -133,10 +133,9 @@ func (c *converter) writeValue(v any) error {
 		if v {
 			_, err := c.w.Write([]byte("true"))
 			return err
-		} else {
-			_, err := c.w.Write([]byte("false"))
-			return err
 		}
+		_, err := c.w.Write([]byte("false"))
+		return err
 	case json.Number:
 		_, err := c.w.Write([]byte(v))
 		return err
