@@ -124,6 +124,22 @@ func (c *converter) convert(r io.Reader) error {
 	}
 }
 
+func (c *converter) writeIndent() error {
+	if n := c.indent; n > 0 {
+		const spaces = "                                "
+		for n > len(spaces) {
+			if _, err := c.w.Write([]byte(spaces)); err != nil {
+				return err
+			}
+			n -= len(spaces)
+		}
+		if _, err := c.w.Write([]byte(spaces)[:n]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *converter) writeValue(v any) error {
 	switch v := v.(type) {
 	default:
@@ -243,22 +259,6 @@ func (c *converter) writeBlockStyleString(v string) error {
 			return err
 		}
 		if err := c.writeIndent(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *converter) writeIndent() error {
-	if n := c.indent; n > 0 {
-		const spaces = "                                "
-		for n > len(spaces) {
-			if _, err := c.w.Write([]byte(spaces)); err != nil {
-				return err
-			}
-			n -= len(spaces)
-		}
-		if _, err := c.w.Write([]byte(spaces)[:n]); err != nil {
 			return err
 		}
 	}
