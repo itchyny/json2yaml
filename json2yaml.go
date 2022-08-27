@@ -50,10 +50,9 @@ func (c *converter) convertInternal(dec *json.Decoder) error {
 		if err != nil {
 			if err == io.EOF {
 				if len(c.stack) == 1 {
-					err = nil
-				} else {
-					err = io.ErrUnexpectedEOF
+					return nil
 				}
+				err = io.ErrUnexpectedEOF
 			}
 			return err
 		}
