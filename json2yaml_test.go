@@ -277,6 +277,11 @@ w: |-
   b
 `,
 		},
+		{
+			name: "large array",
+			src:  "[" + strings.Repeat(`"test",`, 999) + `"test"]`,
+			want: strings.Repeat("- test\n", 1000),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
