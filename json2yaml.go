@@ -33,6 +33,11 @@ func (c *converter) convert(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	dec.UseNumber()
 	err := c.convertInternal(dec)
+	if err != nil {
+		if bs := c.buf.Bytes(); len(bs) > 0 && bs[len(bs)-1] != '\n' {
+			c.buf.WriteByte('\n')
+		}
+	}
 	if ferr := c.flush(); err == nil {
 		err = ferr
 	}

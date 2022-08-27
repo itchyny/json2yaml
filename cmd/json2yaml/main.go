@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -66,11 +64,6 @@ Options:
 			}
 			if err := convert(arg); err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %s\n", name, err)
-				jerr := &json.SyntaxError{}
-				if errors.As(err, &jerr) {
-					// Clear incomplete output for next argument.
-					fmt.Fprintln(os.Stdout)
-				}
 				exitCode = exitCodeErr
 			}
 		}

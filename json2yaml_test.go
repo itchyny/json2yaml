@@ -142,6 +142,11 @@ baz: {}
 			err:  "unexpected EOF",
 		},
 		{
+			name: "unclosed object after object key",
+			src:  `{"foo"`,
+			err:  "unexpected EOF",
+		},
+		{
 			name: "empty array",
 			src:  "[]",
 			want: `[]
@@ -224,6 +229,11 @@ bar:
 			name: "unclosed array",
 			src:  "[",
 			err:  "unexpected EOF",
+		},
+		{
+			name: "unexpected closing bracket",
+			src:  "]",
+			err:  "invalid character ']'",
 		},
 		{
 			name: "block style string",
