@@ -137,13 +137,21 @@ baz: {}
 			want: join([]string{"{}", "foo: 128", "{}"}),
 		},
 		{
-			name: "unclosed object",
+			name: "unclosed object with no entries",
 			src:  "{",
+			want: "{}\n",
 			err:  "unexpected EOF",
 		},
 		{
 			name: "unclosed object after object key",
 			src:  `{"foo"`,
+			want: "foo:\n",
+			err:  "unexpected EOF",
+		},
+		{
+			name: "unclosed object after object value",
+			src:  `{"foo":128`,
+			want: "foo: 128\n",
 			err:  "unexpected EOF",
 		},
 		{
@@ -226,14 +234,28 @@ bar:
 `,
 		},
 		{
-			name: "unclosed array",
+			name: "unclosed empty array",
 			src:  "[",
+			want: "[]\n",
+			err:  "unexpected EOF",
+		},
+		{
+			name: "unclosed array after an element",
+			src:  "[1",
+			want: "- 1\n",
 			err:  "unexpected EOF",
 		},
 		{
 			name: "unexpected closing bracket",
-			src:  "]",
+			src:  `{"x":]`,
+			want: "x:\n",
 			err:  "invalid character ']'",
+		},
+		{
+			name: "unexpected character in array",
+			src:  "[1,%",
+			want: "- 1\n- \n",
+			err:  "invalid character '%'",
 		},
 		{
 			name: "block style string",
@@ -287,12 +309,12 @@ w: |-
 		t.Run(tc.name, func(t *testing.T) {
 			var sb strings.Builder
 			err := json2yaml.Convert(&sb, strings.NewReader(tc.src))
+			if got, want := diff(sb.String(), tc.want); got != want {
+				t.Fatalf("should write\n  %q\nbut got\n  %q\nwhen source is\n  %q", want, got, tc.src)
+			}
 			if tc.err == "" {
 				if err != nil {
 					t.Fatalf("should not raise an error but got: %s", err)
-				}
-				if got, want := diff(sb.String(), tc.want); got != want {
-					t.Fatalf("should write\n  %q\nbut got\n  %q\nwhen source is\n  %q", want, got, tc.src)
 				}
 			} else {
 				if err == nil {
