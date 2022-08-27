@@ -2,6 +2,7 @@
 package json2yaml
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"regexp"
@@ -11,18 +12,34 @@ import (
 
 // Convert reads JSON from r and writes YAML to w.
 func Convert(w io.Writer, r io.Reader) error {
-	return (&converter{w, []byte{'.'}, 0}).convert(r)
+	return (&converter{w, new(bytes.Buffer), []byte{'.'}, 0}).convert(r)
 }
 
 type converter struct {
 	w      io.Writer
+	buf    *bytes.Buffer
 	stack  []byte
 	indent int
 }
 
+func (c *converter) flush() error {
+	_, err := c.w.Write(c.buf.Bytes())
+	c.buf.Reset()
+	return err
+}
+
 func (c *converter) convert(r io.Reader) error {
+	c.buf.Grow(8 * 1024)
 	dec := json.NewDecoder(r)
 	dec.UseNumber()
+	err := c.convertInternal(dec)
+	if ferr := c.flush(); err == nil {
+		err = ferr
+	}
+	return err
+}
+
+func (c *converter) convertInternal(dec *json.Decoder) error {
 	for {
 		token, err := dec.Token()
 		if err != nil {
@@ -44,32 +61,20 @@ func (c *converter) convert(r io.Reader) error {
 				c.stack = append(c.stack, byte(delim))
 				if dec.More() {
 					if c.stack[len(c.stack)-2] == ':' {
-						if _, err := c.w.Write([]byte("\n")); err != nil {
-							return err
-						}
-						if err := c.writeIndent(); err != nil {
-							return err
-						}
+						c.buf.WriteByte('\n')
+						c.writeIndent()
 					}
 					if c.stack[len(c.stack)-1] == '[' {
-						if _, err := c.w.Write([]byte("- ")); err != nil {
-							return err
-						}
+						c.buf.WriteString("- ")
 					}
 				} else {
 					if c.stack[len(c.stack)-2] == ':' {
-						if _, err := c.w.Write([]byte(" ")); err != nil {
-							return err
-						}
+						c.buf.WriteByte(' ')
 					}
 					if c.stack[len(c.stack)-1] == '{' {
-						if _, err := c.w.Write([]byte("{}\n")); err != nil {
-							return err
-						}
+						c.buf.WriteString("{}\n")
 					} else {
-						if _, err := c.w.Write([]byte("[]\n")); err != nil {
-							return err
-						}
+						c.buf.WriteString("[]\n")
 					}
 				}
 				continue
@@ -85,79 +90,63 @@ func (c *converter) convert(r io.Reader) error {
 				if err := c.writeValue(token); err != nil {
 					return err
 				}
-				if _, err := c.w.Write([]byte(":")); err != nil {
-					return err
-				}
+				c.buf.WriteByte(':')
 				c.stack[len(c.stack)-1] = ':'
 				continue
 			case ':':
-				if _, err := c.w.Write([]byte(" ")); err != nil {
-					return err
-				}
+				c.buf.WriteByte(' ')
 				fallthrough
 			default:
 				if err := c.writeValue(token); err != nil {
 					return err
 				}
-				if _, err := c.w.Write([]byte("\n")); err != nil {
-					return err
-				}
+				c.buf.WriteByte('\n')
 			}
 		}
 		if dec.More() {
-			if err := c.writeIndent(); err != nil {
-				return err
-			}
+			c.writeIndent()
 			switch c.stack[len(c.stack)-1] {
 			case ':':
 				c.stack[len(c.stack)-1] = '{'
 			case '[':
-				if _, err := c.w.Write([]byte("- ")); err != nil {
-					return err
-				}
+				c.buf.WriteString("- ")
 			case '.':
-				if _, err := c.w.Write([]byte("---\n")); err != nil {
-					return err
-				}
+				c.buf.WriteString("---\n")
 			}
 		}
 	}
 }
 
-func (c *converter) writeIndent() error {
+func (c *converter) writeIndent() {
 	if n := c.indent; n > 0 {
 		const spaces = "                                "
 		for n > len(spaces) {
-			if _, err := c.w.Write([]byte(spaces)); err != nil {
-				return err
-			}
+			c.buf.WriteString(spaces)
 			n -= len(spaces)
 		}
-		if _, err := c.w.Write([]byte(spaces)[:n]); err != nil {
-			return err
-		}
+		c.buf.WriteString(spaces[:n])
 	}
-	return nil
 }
 
 func (c *converter) writeValue(v any) error {
 	switch v := v.(type) {
 	default:
-		_, err := c.w.Write([]byte("null"))
-		return err
+		c.buf.WriteString("null")
 	case bool:
 		if v {
-			_, err := c.w.Write([]byte("true"))
-			return err
+			c.buf.WriteString("true")
+		} else {
+			c.buf.WriteString("false")
 		}
-		_, err := c.w.Write([]byte("false"))
-		return err
 	case json.Number:
-		_, err := c.w.Write([]byte(v))
-		return err
+		c.buf.WriteString(string(v))
 	case string:
-		return c.writeString(v)
+		c.writeString(v)
 	}
+	if c.buf.Len() > 4*1024 {
+		return c.flush()
+	}
+	return nil
 }
 
 // These patterns match more than the specifications,
@@ -205,105 +194,80 @@ var (
 	)
 )
 
-func (c *converter) writeString(v string) error {
+func (c *converter) writeString(v string) {
 	switch {
 	default:
-		_, err := c.w.Write([]byte(v))
-		return err
+		c.buf.WriteString(v)
 	case strings.ContainsRune(v, '\n'):
 		if !quoteMultiLineStringPattern.MatchString(v) {
-			return c.writeBlockStyleString(v)
+			c.writeBlockStyleString(v)
+			break
 		}
 		fallthrough
 	case quoteSingleLineStringPattern.MatchString(v):
-		return c.writeDoubleQuotedString(v)
+		c.writeDoubleQuotedString(v)
 	}
 }
 
-func (c *converter) writeBlockStyleString(v string) error {
+func (c *converter) writeBlockStyleString(v string) {
 	if c.stack[len(c.stack)-1] == '{' {
-		if _, err := c.w.Write([]byte("? ")); err != nil {
-			return err
-		}
+		c.buf.WriteString("? ")
 	}
-	if _, err := c.w.Write([]byte("|")); err != nil {
-		return err
-	}
+	c.buf.WriteByte('|')
 	if !strings.HasSuffix(v, "\n") {
-		if _, err := c.w.Write([]byte("-")); err != nil {
-			return err
-		}
+		c.buf.WriteByte('-')
 	} else if strings.HasSuffix(v, "\n\n") {
-		if _, err := c.w.Write([]byte("+")); err != nil {
-			return err
-		}
+		c.buf.WriteByte('+')
 	}
 	c.indent += 2
 	for s := ""; v != ""; {
 		s, v, _ = strings.Cut(v, "\n")
-		if _, err := c.w.Write([]byte("\n")); err != nil {
-			return err
-		}
+		c.buf.WriteByte('\n')
 		if s != "" {
-			if err := c.writeIndent(); err != nil {
-				return err
-			}
-			if _, err := c.w.Write([]byte(s)); err != nil {
-				return err
-			}
+			c.writeIndent()
+			c.buf.WriteString(s)
 		}
 	}
 	c.indent -= 2
 	if c.stack[len(c.stack)-1] == '{' {
-		if _, err := c.w.Write([]byte("\n")); err != nil {
-			return err
-		}
-		if err := c.writeIndent(); err != nil {
-			return err
-		}
+		c.buf.WriteByte('\n')
+		c.writeIndent()
 	}
-	return nil
 }
 
 // ref: encodeState#string in encoding/json
-func (c *converter) writeDoubleQuotedString(s string) error {
+func (c *converter) writeDoubleQuotedString(s string) {
 	const hex = "0123456789ABCDEF"
-	if _, err := c.w.Write([]byte(`"`)); err != nil {
-		return err
-	}
+	c.buf.WriteByte('"')
 	start := 0
 	for i := 0; i < len(s); {
-		var err error
 		if b := s[i]; b < utf8.RuneSelf {
 			if ' ' <= b && b <= '~' && b != '"' && b != '\\' {
 				i++
 				continue
 			}
 			if start < i {
-				if _, err = c.w.Write([]byte(s[start:i])); err != nil {
-					return err
-				}
+				c.buf.WriteString(s[start:i])
 			}
 			switch b {
 			case '"':
-				_, err = c.w.Write([]byte(`\"`))
+				c.buf.WriteString(`\"`)
 			case '\\':
-				_, err = c.w.Write([]byte(`\\`))
+				c.buf.WriteString(`\\`)
 			case '\b':
-				_, err = c.w.Write([]byte(`\b`))
+				c.buf.WriteString(`\b`)
 			case '\f':
-				_, err = c.w.Write([]byte(`\f`))
+				c.buf.WriteString(`\f`)
 			case '\n':
-				_, err = c.w.Write([]byte(`\n`))
+				c.buf.WriteString(`\n`)
 			case '\r':
-				_, err = c.w.Write([]byte(`\r`))
+				c.buf.WriteString(`\r`)
 			case '\t':
-				_, err = c.w.Write([]byte(`\t`))
+				c.buf.WriteString(`\t`)
 			default:
-				_, err = c.w.Write([]byte{'\\', 'x', hex[b>>4], hex[b&0xF]})
-			}
-			if err != nil {
-				return err
+				c.buf.WriteString(`\x`)
+				c.buf.WriteByte(hex[b>>4])
+				c.buf.WriteByte(hex[b&0xF])
 			}
 			i++
 			start = i
@@ -313,19 +277,18 @@ func (c *converter) writeDoubleQuotedString(s string) error {
 		if r <= '\u009F' || '\uFDD0' <= r && (r == '\uFEFF' ||
 			r <= '\uFDEF' || r == '\uFFFE' || r == '\uFFFF') {
 			if start < i {
-				if _, err = c.w.Write([]byte(s[start:i])); err != nil {
-					return err
-				}
+				c.buf.WriteString(s[start:i])
 			}
 			if r <= '\u009F' {
-				if _, err = c.w.Write([]byte{'\\', 'x', hex[r>>4], hex[r&0xF]}); err != nil {
-					return err
-				}
+				c.buf.WriteString(`\x`)
+				c.buf.WriteByte(hex[r>>4])
+				c.buf.WriteByte(hex[r&0xF])
 			} else {
-				if _, err = c.w.Write([]byte{'\\', 'u', hex[r>>12], hex[r>>8&0xF],
-					hex[r>>4&0xF], hex[r&0xF]}); err != nil {
-					return err
-				}
+				c.buf.WriteString(`\u`)
+				c.buf.WriteByte(hex[r>>12])
+				c.buf.WriteByte(hex[r>>8&0xF])
+				c.buf.WriteByte(hex[r>>4&0xF])
+				c.buf.WriteByte(hex[r&0xF])
 			}
 			i += size
 			start = i
@@ -334,10 +297,7 @@ func (c *converter) writeDoubleQuotedString(s string) error {
 		i += size
 	}
 	if start < len(s) {
-		if _, err := c.w.Write([]byte(s[start:])); err != nil {
-			return err
-		}
+		c.buf.WriteString(s[start:])
 	}
-	_, err := c.w.Write([]byte(`"`))
-	return err
+	c.buf.WriteByte('"')
 }
