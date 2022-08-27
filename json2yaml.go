@@ -38,7 +38,7 @@ func (c *converter) convert(r io.Reader) error {
 			c.buf.WriteByte('\n')
 		}
 	}
-	if ferr := c.flush(); err == nil {
+	if ferr := c.flush(); ferr != nil && err == nil {
 		err = ferr
 	}
 	return err

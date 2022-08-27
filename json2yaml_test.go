@@ -1,6 +1,7 @@
 package json2yaml_test
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -318,11 +319,52 @@ w: |-
 				}
 			} else {
 				if err == nil {
-					t.Fatalf("should raise an error %s but got no error", tc.err)
+					t.Fatalf("should raise an error %q but got no error", tc.err)
 				}
 				if !strings.Contains(err.Error(), tc.err) {
-					t.Fatalf("should raise an error %s but got error %s", tc.err, err)
+					t.Fatalf("should raise an error %q but got error %q", tc.err, err)
 				}
+			}
+		})
+	}
+}
+
+type errWriter struct{}
+
+func (w errWriter) Write(bs []byte) (int, error) {
+	return 0, errors.New(fmt.Sprint(len(bs)))
+}
+
+func TestConvertError(t *testing.T) {
+	testCases := []struct {
+		name string
+		src  string
+		err  string
+	}{
+		{
+			name: "null",
+			src:  "null",
+			err:  fmt.Sprint(len("null\n")),
+		},
+		{
+			name: "large object key",
+			src:  `{"` + strings.Repeat("test", 1200) + `":0}`,
+			err:  fmt.Sprint(len("test") * 1200),
+		},
+		{
+			name: "large array",
+			src:  "[" + strings.Repeat(`"test",`, 1000) + `"test"]`,
+			err:  fmt.Sprint(len("- test\n")*(4*1024/len("- test\n")+1) - 1),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := json2yaml.Convert(errWriter{}, strings.NewReader(tc.src))
+			if err == nil {
+				t.Fatalf("should raise an error %q but got no error", tc.err)
+			}
+			if err.Error() != tc.err {
+				t.Fatalf("should raise an error %q but got error %q", tc.err, err)
 			}
 		})
 	}
