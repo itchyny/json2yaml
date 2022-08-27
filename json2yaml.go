@@ -175,8 +175,8 @@ var (
 			`)$` +
 			// c-indicator - '-' - '?' - ':', leading white space
 			"|[,\\[\\]{}#&*!|>'\"%@` \\t]" +
-			// sequence entry, document separator, mapping key
-			`|(?:-(?:--)?|\?)(?:[ \t]|$)` +
+			// sequence entry, document markers, mapping key
+			`|(?:-(?:--)?|\.\.\.|\?)(?:[ \t]|$)` +
 			`)` +
 			// mapping value
 			`|:(?:[ \t]|$)` +
