@@ -33,8 +33,8 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			name: "string",
-			src:  `"" "foo" "null" "hello, world" "\b\f\n\r\n\t" "１２３４５"`,
-			want: join([]string{`""`, `foo`, `"null"`, `hello, world`, `"\b\f\n\r\n\t"`, `１２３４５`}),
+			src:  `"" "foo" "null" "hello, world" "\b\f\n\r\n\t" "１２３４５" " １２３４５ "`,
+			want: join([]string{`""`, `foo`, `"null"`, `hello, world`, `"\b\f\n\r\n\t"`, `１２３４５`, `" １２３４５ "`}),
 		},
 		{
 			name: "quote booleans",
