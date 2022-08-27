@@ -15,6 +15,11 @@ json2yaml file.json ...
 json2yaml <file.json >output.yaml
 ```
 
+You can combine with other command line tools.
+```bash
+gh api /orgs/github/repos | json2yaml | less
+```
+
 ## Usage as a library
 You can use the converter as a Go library.
 
