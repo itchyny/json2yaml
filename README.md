@@ -22,6 +22,7 @@ gh api /orgs/github/repos | json2yaml | less
 
 ## Usage as a library
 You can use the converter as a Go library.
+[`json2yaml.Convert(io.Writer, io.Reader) error`](https://pkg.go.dev/github.com/itchyny/json2yaml#Convert) is exported.
 
 ```go
 package main
