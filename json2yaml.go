@@ -190,7 +190,7 @@ var (
 	quoteMultiLineStringPattern = regexp.MustCompile(
 		`` +
 			// leading white space
-			`^\n*(?: |$)` +
+			`^\n*(?:[ \t]|$)` +
 			// C0 control codes - '\t' - '\n', DEL
 			"|[\u0000-\u0008\u000B-\u001F\u007F" +
 			// C1 control codes, BOM, noncharacters

@@ -268,7 +268,7 @@ bar:
 				"# a\n" "# a\r" "[a]\n" "!\n#\n%\n- a\n" "- a\n- b\n" "---\n" "a: b # c\n"`,
 			want: join([]string{`"\n"`, `"\n\n"`, "|\n  a", "|+\n  a\n", "|+\n  a\n\n", "|\n  a ", "|\n  a\t", "|-\n  a\n   ", "|-\n  a\n  \t", `"a\r\n"`,
 				"|-\n  a\n  b", `"a\r\nb"`, "|-\n  a\n\n  b", "|\n  a\n  b", "|-\n  a\n    b\n  c", "|\n  a\n    b\n  c",
-				"|-\n\n  a", `"\n a"`, "|-\n\n\n  a", "|\n\n  a", "|\n\n  a\n  b", "|+\n\n  a\n  b\n", "|\n\n  \ta",
+				"|-\n\n  a", `"\n a"`, "|-\n\n\n  a", "|\n\n  a", "|\n\n  a\n  b", "|+\n\n  a\n  b\n", `"\n\ta\n"`,
 				"|\n  # a", `"# a\r"`, "|\n  [a]", "|\n  !\n  #\n  %\n  - a", "|\n  - a\n  - b", "|\n  ---", "|\n  a: b # c"}),
 		},
 		{
