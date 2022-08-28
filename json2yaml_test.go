@@ -354,6 +354,11 @@ func TestConvertError(t *testing.T) {
 			err:  fmt.Sprint(len("test") * 1200),
 		},
 		{
+			name: "large object value",
+			src:  `{"x":"` + strings.Repeat("test", 1200) + `"}`,
+			err:  fmt.Sprint(len("x: ") + len("test")*1200),
+		},
+		{
 			name: "large array",
 			src:  "[" + strings.Repeat(`"test",`, 1000) + `"test"]`,
 			err:  fmt.Sprint(len("- test\n")*(4*1024/len("- test\n")+1) - 1),
