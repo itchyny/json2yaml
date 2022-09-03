@@ -17,7 +17,7 @@ json2yaml <file.json >output.yaml
 
 You can combine with other command line tools.
 ```bash
-gh api /orgs/github/repos | json2yaml | less
+gh api /meta | json2yaml | less
 ```
 
 ## Usage as a library
