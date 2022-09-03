@@ -34,8 +34,8 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			name: "string",
-			src:  `"" "foo" "null" "hello, world" "\b\f\n\r\n\t" "１２３４５" " １２３４５ "`,
-			want: join([]string{`""`, `foo`, `"null"`, `hello, world`, `"\b\f\n\r\n\t"`, `１２３４５`, `" １２３４５ "`}),
+			src:  `"" "foo" "null" "hello, world" "\"\\\b\f\r\t" "１２３４５" " １２３４５ "`,
+			want: join([]string{`""`, `foo`, `"null"`, `hello, world`, `"\"\\\b\f\r\t"`, `１２３４５`, `" １２３４５ "`}),
 		},
 		{
 			name: "quote booleans",
@@ -100,10 +100,12 @@ func TestConvert(t *testing.T) {
 		{
 			name: "quote and escape special characters",
 			src: "\" \\\\ \" \"\\u001F\" \"\\u001F\\n\" \"\u007F\" \"\u007F\\n\" \"\u0080\" \".\u0089.\" \"\u009F\" \"\u009F\\n\"" +
-				"\"\uFDCF\" \"\uFDD0\" \"\uFDEF\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\" \"\uFFFF\\n\"",
+				"\"\uFDCF\" \"\uFDD0\uFDD1\uFDD2\uFDD3\uFDD4\uFDD5\uFDD6\uFDD7\uFDD8\uFDD9\uFDDA\uFDDB\uFDDC\uFDDD\uFDDE\uFDDF\uFDE0\uFDEF\"" +
+				"\"\uFDF0\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\" \"\uFFFF\\n\"",
 			want: join([]string{
 				`" \\ "`, `"\x1F"`, `"\x1F\n"`, `"\x7F"`, `"\x7F\n"`, `"\x80"`, `".\x89."`, `"\x9F"`, `"\x9F\n"`,
-				"\uFDCF", `"\uFDD0"`, `"\uFDEF"`, "\uFEFE", `"\uFEFF"`, "\uFFFD", `"\uFFFE"`, `"\uFFFF"`, `"\uFFFF\n"`,
+				"\uFDCF", `"\uFDD0\uFDD1\uFDD2\uFDD3\uFDD4\uFDD5\uFDD6\uFDD7\uFDD8\uFDD9\uFDDA\uFDDB\uFDDC\uFDDD\uFDDE\uFDDF\uFDE0\uFDEF"`,
+				"\uFDF0", "\uFEFE", `"\uFEFF"`, "\uFFFD", `"\uFFFE"`, `"\uFFFF"`, `"\uFFFF\n"`,
 			}),
 		},
 		{
