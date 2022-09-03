@@ -269,9 +269,7 @@ func (c *converter) writeDoubleQuotedString(s string) {
 			case '\t':
 				c.buf.WriteString(`\t`)
 			default:
-				c.buf.WriteString(`\x`)
-				c.buf.WriteByte(hex[b>>4])
-				c.buf.WriteByte(hex[b&0xF])
+				c.buf.Write([]byte{'\\', 'x', hex[b>>4], hex[b&0xF]})
 			}
 			i++
 			start = i
@@ -284,15 +282,9 @@ func (c *converter) writeDoubleQuotedString(s string) {
 				c.buf.WriteString(s[start:i])
 			}
 			if r <= '\u009F' {
-				c.buf.WriteString(`\x`)
-				c.buf.WriteByte(hex[r>>4])
-				c.buf.WriteByte(hex[r&0xF])
+				c.buf.Write([]byte{'\\', 'x', hex[r>>4], hex[r&0xF]})
 			} else {
-				c.buf.WriteString(`\u`)
-				c.buf.WriteByte(hex[r>>12])
-				c.buf.WriteByte(hex[r>>8&0xF])
-				c.buf.WriteByte(hex[r>>4&0xF])
-				c.buf.WriteByte(hex[r&0xF])
+				c.buf.Write([]byte{'\\', 'u', hex[r>>12], hex[r>>8&0xF], hex[r>>4&0xF], hex[r&0xF]})
 			}
 			i += size
 			start = i
