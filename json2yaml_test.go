@@ -221,28 +221,20 @@ bar:
 		},
 		{
 			name: "deeply nested object",
-			src:  `{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{"x":{}}}}}}}}}}}}}}}}}}}}}`,
-			want: `x:
-  x:
-    x:
-      x:
-        x:
-          x:
-            x:
-              x:
-                x:
-                  x:
-                    x:
-                      x:
-                        x:
-                          x:
-                            x:
-                              x:
-                                x:
-                                  x:
-                                    x:
-                                      x: {}
-`,
+			src:  strings.Repeat(`{"x":`, 100) + "{}" + strings.Repeat("}", 100),
+			want: (func() string {
+				var sb strings.Builder
+				spaces := strings.Repeat("  ", 100)
+				for i := 0; i < 100; i++ {
+					if i > 0 {
+						sb.WriteByte('\n')
+					}
+					sb.WriteString(spaces[:2*i])
+					sb.WriteString("x:")
+				}
+				sb.WriteString(" {}\n")
+				return sb.String()
+			})(),
 		},
 		{
 			name: "unclosed empty array",

@@ -124,11 +124,17 @@ func (c *converter) convertInternal(dec *json.Decoder) error {
 func (c *converter) writeIndent() {
 	if n := c.indent; n > 0 {
 		const spaces = "                                "
-		for n > len(spaces) {
+		if l := len(spaces); n <= l {
+			c.buf.WriteString(spaces[:n])
+		} else {
 			c.buf.WriteString(spaces)
-			n -= len(spaces)
+			for n -= l; n > 0; n, l = n-l, l*2 {
+				if n < l {
+					l = n
+				}
+				c.buf.Write(c.buf.Bytes()[c.buf.Len()-l:])
+			}
 		}
-		c.buf.WriteString(spaces[:n])
 	}
 }
 
