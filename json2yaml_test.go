@@ -315,7 +315,7 @@ w: |-
 			var sb strings.Builder
 			err := json2yaml.Convert(&sb, strings.NewReader(tc.src))
 			if got, want := diff(sb.String(), tc.want); got != want {
-				t.Fatalf("should write\n  %q\nbut got\n  %q\nwhen source is\n  %q", want, got, tc.src)
+				t.Fatalf("should write\n  %q\nbut got\n  %q", want, got)
 			}
 			if tc.err == "" {
 				if err != nil {
