@@ -6,8 +6,8 @@
 [![pkg.go.dev](https://pkg.go.dev/badge/github.com/itchyny/json2yaml)](https://pkg.go.dev/github.com/itchyny/json2yaml)
 
 This is an implementation of JSON to YAML converter written in Go language.
-This tool efficiently converts each JSON tokens in streaming fashion,
-so it avoids loading the entire JSON on the memory.
+This tool efficiently converts each JSON tokens in streaming fashion, so it avoids loading the entire JSON on the memory.
+Also, this tool preserves the order of mapping keys and the number representation.
 
 ## Usage as a command line tool
 ```bash
