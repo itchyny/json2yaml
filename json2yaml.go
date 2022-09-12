@@ -290,7 +290,9 @@ func (c *converter) writeDoubleQuotedString(s string) {
 			if r <= '\u009F' {
 				c.buf.Write([]byte{'\\', 'x', hex[r>>4], hex[r&0xF]})
 			} else {
-				c.buf.Write([]byte{'\\', 'u', hex[r>>12], hex[r>>8&0xF], hex[r>>4&0xF], hex[r&0xF]})
+				c.buf.Write([]byte{
+					'\\', 'u', hex[r>>12], hex[r>>8&0xF], hex[r>>4&0xF], hex[r&0xF],
+				})
 			}
 			i += size
 			start = i
