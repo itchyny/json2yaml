@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/itchyny/json2yaml"
@@ -79,7 +80,7 @@ func convert(name string) error {
 		}
 		return nil
 	}
-	f, err := os.Open(name)
+	f, err := os.Open(filepath.Clean(name))
 	if err != nil {
 		return err
 	}
