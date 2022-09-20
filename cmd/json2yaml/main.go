@@ -1,3 +1,4 @@
+// Package main implements the json2yaml command.
 package main
 
 import (
