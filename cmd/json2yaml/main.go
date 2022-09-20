@@ -73,7 +73,7 @@ Options:
 	return
 }
 
-func convert(name string) error {
+func convert(name string) (err error) {
 	if name == "-" {
 		if err := json2yaml.Convert(os.Stdout, os.Stdin); err != nil {
 			return fmt.Errorf("<stdin>: %w", err)
@@ -84,7 +84,11 @@ func convert(name string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); err == nil {
+			err = cerr
+		}
+	}()
 	if err := json2yaml.Convert(os.Stdout, f); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
