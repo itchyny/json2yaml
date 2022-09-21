@@ -1,4 +1,4 @@
-// Package main implements the json2yaml command.
+// json2yaml - convert JSON to YAML
 package main
 
 import (
