@@ -100,10 +100,12 @@ func TestConvert(t *testing.T) {
 		{
 			name: "quote and escape special characters",
 			src: "\" \\\\ \" \"\\u001F\" \"\\u001F\\n\" \"\u007F\" \"\u007F\\n\" \"\u0080\" \".\u0089.\" \"\u009F\" \"\u009F\\n\"" +
-				"\"\uFDCF\" \"\uFDD0\uFDD1\uFDD2\uFDD3\uFDD4\uFDD5\uFDD6\uFDD7\uFDD8\uFDD9\uFDDA\uFDDB\uFDDC\uFDDD\uFDDE\uFDDF\uFDE0\uFDEF\"" +
+				"\"\u2027\" \"\u2028\" \".\u2028.\" \"\u2028\\n\" \"\u2029\" \".\u2029.\" \"\u2029\\n\" \"\u202A\"" +
+				" \"\uFDCF\" \"\uFDD0\uFDD1\uFDD2\uFDD3\uFDD4\uFDD5\uFDD6\uFDD7\uFDD8\uFDD9\uFDDA\uFDDB\uFDDC\uFDDD\uFDDE\uFDDF\uFDE0\uFDEF\"" +
 				"\"\uFDF0\" \"\uFEFE\" \"\uFEFF\" \"\uFFFD\" \"\uFFFE\" \"\uFFFF\" \"\uFFFF\\n\"",
 			want: join([]string{
 				`" \\ "`, `"\x1F"`, `"\x1F\n"`, `"\x7F"`, `"\x7F\n"`, `"\x80"`, `".\x89."`, `"\x9F"`, `"\x9F\n"`,
+				"\u2027", `"\u2028"`, `".\u2028."`, `"\u2028\n"`, `"\u2029"`, `".\u2029."`, `"\u2029\n"`, "\u202A",
 				"\uFDCF", `"\uFDD0\uFDD1\uFDD2\uFDD3\uFDD4\uFDD5\uFDD6\uFDD7\uFDD8\uFDD9\uFDDA\uFDDB\uFDDC\uFDDD\uFDDE\uFDDF\uFDE0\uFDEF"`,
 				"\uFDF0", "\uFEFE", `"\uFEFF"`, "\uFFFD", `"\uFFFE"`, `"\uFFFF"`, `"\uFFFF\n"`,
 			}),
@@ -225,7 +227,7 @@ bar:
 			want: (func() string {
 				var sb strings.Builder
 				spaces := strings.Repeat("  ", 100)
-				for i := 0; i < 100; i++ {
+				for i := range 100 {
 					if i > 0 {
 						sb.WriteByte('\n')
 					}
@@ -335,7 +337,7 @@ w: |-
 
 type errWriter struct{}
 
-func (w errWriter) Write(bs []byte) (int, error) {
+func (errWriter) Write(bs []byte) (int, error) {
 	return 0, errors.New(fmt.Sprint(len(bs)))
 }
 
