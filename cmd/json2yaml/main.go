@@ -1,4 +1,3 @@
-// json2yaml - convert JSON to YAML
 package main
 
 import (
