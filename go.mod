@@ -1,3 +1,3 @@
 module github.com/itchyny/json2yaml
 
-go 1.18
+go 1.24
