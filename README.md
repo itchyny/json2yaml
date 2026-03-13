@@ -1,5 +1,5 @@
 # json2yaml
-[![CI Status](https://github.com/itchyny/json2yaml/workflows/CI/badge.svg)](https://github.com/itchyny/json2yaml/actions)
+[![CI Status](https://github.com/itchyny/json2yaml/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/itchyny/json2yaml/actions?query=branch:main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/itchyny/json2yaml)](https://goreportcard.com/report/github.com/itchyny/json2yaml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/itchyny/json2yaml/blob/main/LICENSE)
 [![release](https://img.shields.io/github/release/itchyny/json2yaml/all.svg)](https://github.com/itchyny/json2yaml/releases)
@@ -57,10 +57,10 @@ go install github.com/itchyny/json2yaml/cmd/json2yaml@latest
 ```
 
 ## Bug Tracker
-Report bug at [Issues・itchyny/json2yaml - GitHub](https://github.com/itchyny/json2yaml/issues).
+Report bugs at [Issues・itchyny/json2yaml - GitHub](https://github.com/itchyny/json2yaml/issues).
 
 ## Author
-itchyny (https://github.com/itchyny)
+itchyny (<https://github.com/itchyny>)
 
 ## License
 This software is released under the MIT License, see LICENSE.
