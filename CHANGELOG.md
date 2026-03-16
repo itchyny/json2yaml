@@ -1,4 +1,8 @@
 # Changelog
+## [v0.1.5](https://github.com/itchyny/json2yaml/compare/v0.1.4..v0.1.5) (2026-03-16)
+* quote merge key `<<` and default value key `=`
+* quote line and paragraph separator characters
+
 ## [v0.1.4](https://github.com/itchyny/json2yaml/compare/v0.1.3..v0.1.4) (2022-11-17)
 * improve coding style and fix for linters
 
