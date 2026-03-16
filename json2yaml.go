@@ -178,6 +178,8 @@ var (
 			`|\d\d\d\d-\d\d?-\d\d?` + // date
 			`(?:(?:T|\s+)\d\d?:\d\d?:\d\d?(?:\.\d*)?` + // time
 			`(?:\s*(?:Z|[-+]\d\d?(?::\d\d?)?))?)?` + // time zone
+			// tag:yaml.org,2002:merge, tag:yaml.org,2002:value
+			`|<<|=` +
 			`)$` +
 			// c-indicator - '-' - '?' - ':', leading white space
 			"|[,\\[\\]{}#&*!|>'\"%@` \\t]" +
